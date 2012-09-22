@@ -149,19 +149,19 @@ func GetPlugin(pluginName string) {
 	downloadPageURL, err := GetDownloadPageURL(pluginName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-		os.Exit(1)
+		return
 	}
 
 	downloadURL, err := GetDownloadURL(pluginName, downloadPageURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-		os.Exit(1)
+		return
 	}
 
 	filename, err := Download(pluginName, downloadURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-		os.Exit(1)
+		return
 	}
 
 	fmt.Printf("Downloaded to %s\n", filename)
