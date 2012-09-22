@@ -27,7 +27,7 @@ func GetAttr(node *h5.Node, name string) (value string) {
 
 func GetDownloadPageURL(pluginName string) (downloadPageURL string, err error) {
 	pluginPageURL := "http://dev.bukkit.org/server-mods/" + pluginName + "/"
-	fmt.Printf("Fetching %s\n", pluginPageURL)
+	fmt.Printf("[%s] Fetching %s\n", pluginName, pluginPageURL)
 
 	resp, err := http.Get(pluginPageURL)
 	if err != nil {
@@ -36,7 +36,7 @@ func GetDownloadPageURL(pluginName string) (downloadPageURL string, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("HTTP request returned %s", resp.Status)
+		return "", fmt.Errorf("[%s] HTTP request returned %s", pluginName, resp.Status)
 	}
 
 	p := h5.NewParser(resp.Body)
@@ -48,7 +48,7 @@ func GetDownloadPageURL(pluginName string) (downloadPageURL string, err error) {
 	tree := p.Tree()
 	results := DownloadPageURLSelector.Apply(tree)
 	if len(results) < 1 {
-		return "", fmt.Errorf("Download page link element was not found (bad selector?)")
+		return "", fmt.Errorf("[%s] Download page link element was not found (bad selector?)", pluginName)
 	}
 
 	el := results[0]
@@ -56,8 +56,8 @@ func GetDownloadPageURL(pluginName string) (downloadPageURL string, err error) {
 	return downloadPageURL, nil
 }
 
-func GetDownloadURL(downloadPageURL string) (downloadURL string, err error) {
-	fmt.Printf("Fetching %s\n", downloadPageURL)
+func GetDownloadURL(pluginName string, downloadPageURL string) (downloadURL string, err error) {
+	fmt.Printf("[%s] Fetching %s\n", pluginName, downloadPageURL)
 
 	resp, err := http.Get(downloadPageURL)
 	if err != nil {
@@ -66,7 +66,7 @@ func GetDownloadURL(downloadPageURL string) (downloadURL string, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("HTTP request returned %s", resp.Status)
+		return "", fmt.Errorf("[%s] HTTP request returned %s", pluginName, resp.Status)
 	}
 
 	p := h5.NewParser(resp.Body)
@@ -78,7 +78,7 @@ func GetDownloadURL(downloadPageURL string) (downloadURL string, err error) {
 	tree := p.Tree()
 	results := DownloadURLSelector.Apply(tree)
 	if len(results) < 1 {
-		return "", fmt.Errorf("Download link element was not found (bad selector?)")
+		return "", fmt.Errorf("[%s] Download link element was not found (bad selector?)", pluginName)
 	}
 
 	el := results[0]
@@ -86,9 +86,9 @@ func GetDownloadURL(downloadPageURL string) (downloadURL string, err error) {
 	return downloadURL, nil
 }
 
-func Download(downloadURL string) (filename string, err error) {
+func Download(pluginName string, downloadURL string) (filename string, err error) {
 	filename = filepath.Base(downloadURL)
-	fmt.Printf("Fetching %s\n", downloadURL)
+	fmt.Printf("[%s] Fetching %s\n", pluginName, downloadURL)
 
 	resp, err := http.Get(downloadURL)
 	if err != nil {
@@ -97,7 +97,7 @@ func Download(downloadURL string) (filename string, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("HTTP request returned %s", resp.Status)
+		return "", fmt.Errorf("[%s] HTTP request returned %s", pluginName, resp.Status)
 	}
 
 	file, err := os.Create(filename)
@@ -114,7 +114,7 @@ func Download(downloadURL string) (filename string, err error) {
 
 	chunk := make([]byte, 1024*8)
 
-	fmt.Printf("Downloading: 0.0%%")
+	fmt.Printf("[%s] Downloading: 0.0%%", pluginName)
 
 	for {
 		n, err := resp.Body.Read(chunk)
@@ -138,37 +138,42 @@ func Download(downloadURL string) (filename string, err error) {
 
 		ansi.ClearLine()
 		ansi.CursorHozPosition(1)
-		fmt.Printf("Downloading: %.1f%%", percentage)
+		fmt.Printf("[%s] Downloading: %.1f%%", pluginName, percentage)
 	}
 
 	fmt.Println()
 	return filename, nil
 }
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: gettit <plugin-name>\n")
-		os.Exit(2)
-	}
-
-	pluginName := os.Args[1]
+func GetPlugin(pluginName string) {
 	downloadPageURL, err := GetDownloadPageURL(pluginName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	downloadURL, err := GetDownloadURL(downloadPageURL)
+	downloadURL, err := GetDownloadURL(pluginName, downloadPageURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	filename, err := Download(downloadURL)
+	filename, err := Download(pluginName, downloadURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	fmt.Printf("Downloaded to %s\n", filename)
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Fprintf(os.Stderr, "Usage: gettit <plugins...>\n")
+		os.Exit(2)
+	}
+
+	for _, pluginName := range os.Args[1:] {
+		GetPlugin(pluginName)
+	}
 }
