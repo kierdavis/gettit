@@ -8,8 +8,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 var DownloadPageURLSelector = transform.NewSelectorQuery("html", "body", "section", "div", "section", "div", "div", "div", ".unit size1of3 lastUnit", "ul", ".user-action user-action-download", "a")
@@ -164,7 +166,26 @@ func GetPlugin(pluginName string) {
 		return
 	}
 
-	fmt.Printf("Downloaded to %s\n", filename)
+	if strings.HasSuffix(filename, ".zip") {
+		fmt.Printf("[%s] Extracting %s\n", filename)
+
+		cmd := exec.Command("unzip", filename)
+		err = cmd.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+			return
+		}
+
+		fmt.Printf("[%s] Removing %s\n\n", filename)
+		err = os.Remove(filename)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+			return
+		}
+
+	} else {
+		fmt.Printf("[%s] Downloaded to %s\n\n", pluginName, filename)
+	}
 }
 
 func main() {
