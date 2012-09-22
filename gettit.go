@@ -167,7 +167,7 @@ func GetPlugin(pluginName string) {
 	}
 
 	if strings.HasSuffix(filename, ".zip") {
-		fmt.Printf("[%s] Extracting %s\n", filename)
+		fmt.Printf("[%s] Extracting %s\n", pluginName, filename)
 
 		cmd := exec.Command("unzip", filename)
 		err = cmd.Run()
@@ -176,7 +176,7 @@ func GetPlugin(pluginName string) {
 			return
 		}
 
-		fmt.Printf("[%s] Removing %s\n\n", filename)
+		fmt.Printf("[%s] Removing %s\n\n", pluginName, filename)
 		err = os.Remove(filename)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
