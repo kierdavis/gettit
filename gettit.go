@@ -169,7 +169,7 @@ func GetPlugin(pluginName string) {
 	if strings.HasSuffix(filename, ".zip") {
 		fmt.Printf("[%s] Extracting %s\n", pluginName, filename)
 
-		cmd := exec.Command("unzip", filename)
+		cmd := exec.Command("unzip", "-o", filename)
 		err = cmd.Run()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
